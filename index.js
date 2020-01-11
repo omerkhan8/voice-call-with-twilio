@@ -10,6 +10,7 @@ const makeCall = methods.makeCall;
 const placeCall = methods.placeCall;
 const incoming = methods.incoming;
 const welcome = methods.welcome;
+const callLogs = methods.callLogs;
 var twilio = require("twilio");
 
 // Create Express webapp
@@ -55,6 +56,8 @@ app.get("/incoming", function(request, response) {
 app.post("/incoming", function(request, response) {
   response.send(incoming(request));
 });
+
+app.get("/call-logs", callLogs);
 
 // Create an http server and run it
 const server = http.createServer(app);

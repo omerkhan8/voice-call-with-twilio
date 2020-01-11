@@ -3,6 +3,10 @@ require("dotenv").load();
 const AccessToken = require("twilio").jwt.AccessToken;
 const VoiceGrant = AccessToken.VoiceGrant;
 const VoiceResponse = require("twilio").twiml.VoiceResponse;
+const twilioClient = require("twilio")(
+  process.env.ACCOUNT_SID,
+  process.env.AUTH_TOKEN
+);
 const defaultIdentity = "alice";
 const callerId = "client:quick_start";
 // Use a valid Twilio number by adding to your account via https://www.twilio.com/console/phone-numbers/verified
@@ -229,6 +233,50 @@ async function placeCall(request, response) {
   return response.send(res.toString());
 }
 
+function getCallLogs(request, response) {
+  const { page, limit, nextPageToken } = request.query;
+
+  twilioClient.calls
+    .page({
+      pageSize: limit,
+      ...(nextPageToken && { pageNumber: page }),
+      ...(nextPageToken && { pageToken: nextPageToken })
+    })
+    .then(res => {
+      let responseObj = Object.assign({}, res._payload);
+      if (responseObj.next_page_uri) {
+        let params = getParams(responseObj.next_page_uri);
+        console.log("params", params);
+        if (params.PageToken) {
+          responseObj.NextPageToken = params.PageToken;
+        }
+      }
+      response.send(responseObj);
+    })
+    .catch(err => response.send(err));
+  // twilioClient.calls
+  //   .list({ limit: 1,  })
+  //   .then(res => {
+  //     // console.log(res);
+  //     response.send(res);
+  //   })
+  //   .catch(err => {
+  //     console.log("error", err);
+  //   });
+}
+
+function getParams(search) {
+  search = search.split("?")[1];
+  var queryParams = search.split("&").reduce(function(q, query) {
+    var chunks = query.split("=");
+    var key = chunks[0];
+    var value = chunks[1];
+    return (q[key] = value) && q;
+  }, {});
+
+  return queryParams;
+}
+
 /**
  * Creates an endpoint that plays back a greeting.
  */
@@ -276,3 +324,4 @@ exports.makeCall = makeCall;
 exports.placeCall = placeCall;
 exports.incoming = incoming;
 exports.welcome = welcome;
+exports.callLogs = getCallLogs;
